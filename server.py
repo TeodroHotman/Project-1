@@ -4,13 +4,13 @@ import time
 import sys
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify, send_from_directory
-from libsql import Client
+from libsql_client import create_client
 
 load_dotenv()
 
 app = Flask(__name__, static_folder=".", static_url_path="")
 
-db = Client(
+db = create_client(
     url=os.environ["TURSO_DATABASE_URL"],
     auth_token=os.environ["TURSO_AUTH_TOKEN"]
 )
