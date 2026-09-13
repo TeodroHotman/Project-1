@@ -10,13 +10,11 @@ load_dotenv()
 
 app = Flask(__name__, static_folder=".", static_url_path="")
 
-# Turso connection
 db = Client(
     url=os.environ["TURSO_DATABASE_URL"],
     auth_token=os.environ["TURSO_AUTH_TOKEN"]
 )
 
-# Create table if it doesn't exist (runs once on startup)
 db.execute("""
     CREATE TABLE IF NOT EXISTS submissions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -28,7 +26,7 @@ db.execute("""
         timestamp TEXT
     )
 """)
-
+db.commit()
 
 @app.route("/")
 def index():
