@@ -1,13 +1,14 @@
-from importlib import import_module
+import json
+import os
+import time
+import sys
 
-_flask = import_module('flask')
-Flask = _flask.Flask
-request = _flask.request
-jsonify = _flask.jsonify
-import json, os, time
+from flask import Flask, request, jsonify, send_from_directory
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder=".", static_url_path="")
+
 DB_FILE = 'submissions.json'
+
 
 def load_db():
     if os.path.exists(DB_FILE):
@@ -15,44 +16,59 @@ def load_db():
             return json.load(f)
     return []
 
+
 def save_db(data):
     with open(DB_FILE, 'w') as f:
         json.dump(data, f, indent=2)
 
-@app.route('/check', methods=['POST'])
+
+@app.route("/")
+def index():
+    return send_from_directory(".", "index.html")
+
+
+@app.route('/api/check', methods=['POST'])
 def check_access():
-    """Frontend calls this on page load to see if already submitted."""
     data = request.get_json()
     device_id = data.get('device_id')
     ip = request.headers.get('X-Forwarded-For', request.remote_addr)
 
     submissions = load_db()
     for s in submissions:
-        if s.get('device_id') == device_id or s.get('ip') == ip:
+        if s.get('fingerprint') == device_id or s.get('ip') == ip:
             return jsonify({'allowed': False, 'reason': 'already_submitted'})
 
     return jsonify({'allowed': True})
 
+
 @app.route("/api/submit", methods=["POST"])
 def submit():
-    """Frontend calls this on form submit."""
     data = request.get_json()
     ip = request.headers.get('X-Forwarded-For', request.remote_addr)
     user_agent = request.headers.get('User-Agent', 'unknown')
 
     record = {
         'ip': ip,
-        'device_id': data.get('device_id'),
+        'fingerprint': data.get('fingerprint'),
+        'type': data.get('type'),
+        'answers': data.get('answers'),
         'user_agent': user_agent,
-        'slider_value': data.get('slider_value'),
-        'timestamp': time.time()
+        'timestamp': data.get('timestamp')
     }
 
     submissions = load_db()
     submissions.append(record)
     save_db(submissions)
 
+    print(f"New submission: IP={ip}, Type={record['type']}")
+
     return jsonify({'status': 'success', 'id': len(submissions) - 1})
 
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=3000, debug=True)
+    port = 5000
+    print(f"\n{'='*40}")
+    print(f" Server running on port {port}")
+    print(f" Use your Codespace URL to access it")
+    print(f"{'='*40}\n")
+    app.run(host='0.0.0.0', port=port, debug=True)

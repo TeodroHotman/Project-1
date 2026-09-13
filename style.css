@@ -4,11 +4,10 @@ body {
     font-family: system-ui, sans-serif;
     background: #0f0f0f;
     color: #fff;
-    min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    padding-top: 2rem;
 }
 
 #progress-bar {
@@ -30,9 +29,28 @@ body {
     max-width: 480px;
 }
 
-#question { display: flex;
-    flex: column;
+#quiz {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+.question {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.slider-row {
+    display: flex;
+    align-items: center;
     gap: 16px;
+}
+
+.slider-row span {
+    font-size: 0.75rem;
+    min-width: 70px;
+    flex-shrink: 0;
 }
 
 input[type="range"] {

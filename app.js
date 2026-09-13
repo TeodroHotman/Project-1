@@ -18,7 +18,7 @@ questions.forEach(q => {
         <p>${q.text}</p>
         <div class="slider-row">
           <span>${q.left}</span>
-          <input type="range" min="${q.min}" max="${q.mac}" value="${(q.min+q.max)/2}" class="slider">
+          <input type="range" min="${q.min}" max="${q.max}" value="${(q.min+q.max)/2}" class="slider">
           <span>${q.right}</span>
         </div>
       </div>`;
@@ -27,15 +27,54 @@ questions.forEach(q => {
 document.querySelectorAll('.slider').forEach(slider => {
     function update() {
         const pct = ((slider.value - slider.min) / (slider.max - slider.min)) * 100;
-        slider.style.background =
-          `linear-gradient(to right, #4a90d9 ${pct}%, #ddd ${pct}%)`;
+        slider.style.background = `linear-gradient(to right, #4a90d9 ${pct}%, #ddd ${pct}%)`;
     }
     slider.addEventListener('input', update);
     update();
 });
 
-function getFingerprint() {
-    return [
+const submitBtn = document.createElement('button');
+submitBtn.id = 'submit-quiz';
+submitBtn.textContent = 'Submit';
+quiz.appendChild(submitBtn);
+
+document.getElementById('start').addEventListener('click', () => {
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('quiz').style.display = 'block';
+});
+
+submitBtn.addEventListener('click', () => {
+    const values = Array.from(document.querySelectorAll('.slider')).map(s => +s.value);
+    const type = values.map(v => v >= 50 ? "right" : "left").join("");
+
+    document.getElementById('quiz').style.display = 'none';
+    document.getElementById('result').style.display = 'block';
+    document.getElementById('type').textContent = 'Thank You';
+    document.getElementById('description').textContent = 'Your response has been received';
+    document.getElementById('progress-bar').style.width = '100%';
+
+    const breakdown = document.getElementById('breakdown');
+    if (breakdown) {
+        breakdown.innerHTML = "";
+        values.forEach((v, i) => {
+            const span = document.createElement("span");
+            span.className = "score-chip";
+            span.textContent = `Q${i + 1}: ${v}`;
+            breakdown.appendChild(span);
+        });
+    }
+
+    localStorage.setItem('quizSubmitted', 'true');
+
+    fetch("/api/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type, answers: values, fingerprint: getDeviceFingerprint(), timestamp: new Date().toISOString() })
+    });
+});
+
+function getDeviceFingerprint() {
+    const data = [
         navigator.userAgent,
         screen.width + 'x' + screen.height,
         screen.colorDepth,
@@ -43,60 +82,30 @@ function getFingerprint() {
         navigator.language
     ].join('|');
     let hash = 0;
-    for (let i = 0; i < DataTransfer.length; i++) {
-        hash = ((hash << 5) - hash + DataTransfer.charCodeAt(i)) | 0;
+    for (let i = 0; i < data.length; i++) {
+        hash = ((hash << 5) - hash + data.charCodeAt(i)) | 0;
     }
     return 'dev_' + Math.abs(hash).toString(36);
 }
 
 async function checkAccess() {
-    const res = await fetch(`${API}/check`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ device_id: getDeviceFingerprint() })
-    });
-    const result = await res.json();
-
-    if (!result.allowed) {
-    document.getElementById('quiz').style.display = 'none';
-    document.getElementById('result').style.display = 'block';
-    document.getElementById('type').textContent = 'Already Submitted';
-    document.getElementById('description').textContent = 'You already completed this form. Contact me for a redo';
-    return;
-}
-}
-
-function showResult() {
-    const values = Array.from(document.querySelectorAll('.slider')).map(s => +s.value);
-
-    const type = values.map(v => v >= 50 ? "right" : "left").join("")
-
-    document.getElementById('quiz').addEventListener('submit', async (e) => {
-        e.preventDefault();
-    });
-document.getElementById("question").style.display = "none";
-document.getElementById("result").style.display = "block";
-document.getElementById("type").textContent = 'Thank You';
-document.getElementById("description").textContent = 'Your response has been received';
-document.getElementById("progress-bar").style.width = "100%";
-
-const breakdown = document.getElementById("breakdown");
-breakdown.innerHTML ="";
-values.forEach((v, i) => {
-    const span = document.createElement("span");
-    span.className = "score-chip";
-    span.textContent = `Q${i + 1}: ${v}`;
-    breakdown.appendChild(span);
-});
-
-localStorage.setItem('quizSubmitted', 'true');
-
-fetch("/api/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: type, answers: values, fingerprint: getFingerprint(), timestamp: new Date().toISOString()
-    })
-});
+    try {
+        const res = await fetch("/api/check", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ device_id: getDeviceFingerprint() })
+        });
+        const result = await res.json();
+        if (!result.allowed) {
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('quiz').style.display = 'none';
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('type').textContent = 'Already Submitted';
+            document.getElementById('description').textContent = 'You already completed this form. Contact me for a redo';
+        }
+    } catch (e) {
+        console.warn('checkAccess failed:', e);
+    }
 }
 
 checkAccess();
