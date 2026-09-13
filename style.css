@@ -8,6 +8,8 @@ body {
     flex-direction: column;
     align-items: center;
     padding-top: 2rem;
+    overflow-y: auto;
+    touch-action: pan-y;
 }
 
 #progress-bar {
@@ -61,18 +63,19 @@ input[type="range"] {
     background: #ccc;
     border-radius: 3px;
     outline: none;
+    margin: 0 10px;
 }
 input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 20px;
-    height: 20px;
+    width: 28px;
+    height: 28px;
     background: #f50;
     border-radius: 50%;
     cursor: pointer;
 }
 input[type="range"]::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
+    width: 28px;
+    height: 28px;
     background: #f50;
     border-radius: 50%;
     cursor: pointer;
