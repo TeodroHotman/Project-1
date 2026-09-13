@@ -4,18 +4,18 @@ import time
 import sys
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify, send_from_directory
-from libsql_client import create_client
+import turso_serverless
 
 load_dotenv()
 
 app = Flask(__name__, static_folder=".", static_url_path="")
 
-db = create_client(
-    url=os.environ["TURSO_DATABASE_URL"],
+conn = turso_serverless.connect(
+    os.environ["TURSO_DATABASE_URL"],
     auth_token=os.environ["TURSO_AUTH_TOKEN"]
 )
 
-db.execute("""
+conn.execute("""
     CREATE TABLE IF NOT EXISTS submissions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         ip TEXT,
@@ -26,7 +26,8 @@ db.execute("""
         timestamp TEXT
     )
 """)
-db.commit()
+conn.commit()
+
 
 @app.route("/")
 def index():
@@ -39,12 +40,12 @@ def check_access():
     device_id = data.get('device_id')
     ip = request.headers.get('X-Forwarded-For', request.remote_addr)
 
-    result = db.execute(
+    row = conn.execute(
         "SELECT id FROM submissions WHERE fingerprint = ? OR ip = ? LIMIT 1",
-        [device_id, ip]
+        (device_id, ip)
     ).fetchone()
 
-    if result:
+    if row:
         return jsonify({'allowed': False, 'reason': 'already_submitted'})
     return jsonify({'allowed': True})
 
@@ -55,21 +56,16 @@ def submit():
     ip = request.headers.get('X-Forwarded-For', request.remote_addr)
     user_agent = request.headers.get('User-Agent', 'unknown')
 
-    db.execute(
+    conn.execute(
         "INSERT INTO submissions (ip, fingerprint, type, answers, user_agent, timestamp) VALUES (?, ?, ?, ?, ?, ?)",
-        [
-            ip,
-            data.get('fingerprint'),
-            data.get('type'),
-            json.dumps(data.get('answers')),
-            user_agent,
-            data.get('timestamp')
-        ]
+        (ip, data.get('fingerprint'), data.get('type'),
+         json.dumps(data.get('answers')), user_agent, data.get('timestamp'))
     )
+    conn.commit()
 
     print(f"New submission: IP={ip}")
     return jsonify({'status': 'success'})
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)   

@@ -1,4 +1,4 @@
 flask
 gunicorn
-libsql
+turso_serverless
 python-dotenv
