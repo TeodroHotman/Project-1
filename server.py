@@ -2,24 +2,32 @@ import json
 import os
 import time
 import sys
-
+from dotenv import load_dotenv
 from flask import Flask, request, jsonify, send_from_directory
+from libsql import Client
+
+load_dotenv()
 
 app = Flask(__name__, static_folder=".", static_url_path="")
 
-DB_FILE = 'submissions.json'
+# Turso connection
+db = Client(
+    url=os.environ["TURSO_DATABASE_URL"],
+    auth_token=os.environ["TURSO_AUTH_TOKEN"]
+)
 
-
-def load_db():
-    if os.path.exists(DB_FILE):
-        with open(DB_FILE, 'r') as f:
-            return json.load(f)
-    return []
-
-
-def save_db(data):
-    with open(DB_FILE, 'w') as f:
-        json.dump(data, f, indent=2)
+# Create table if it doesn't exist (runs once on startup)
+db.execute("""
+    CREATE TABLE IF NOT EXISTS submissions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ip TEXT,
+        fingerprint TEXT,
+        type TEXT,
+        answers TEXT,
+        user_agent TEXT,
+        timestamp TEXT
+    )
+""")
 
 
 @app.route("/")

@@ -1,2 +1,4 @@
 flask
 gunicorn
+libsql
+python-dotenv
