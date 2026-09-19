@@ -50,7 +50,7 @@ submitBtn.addEventListener('click', () => {
     document.getElementById('quiz').style.display = 'none';
     document.getElementById('result').style.display = 'block';
     document.getElementById('type').textContent = 'Thank You';
-    document.getElementById('description').textContent = 'Your response has been received. \n Survey link https://surveyswap.io/sr/DCK8-14SE-FBXW';
+    document.getElementById('description').textContent = 'Your response has been received. \n Survey link https://surveyswap.io/sr/DCK8-14SE-FBXW or https://www.surveycircle.com/PHTM-3KME-94QP-K6G6/';
     document.getElementById('progress-bar').style.width = '100%';
 
     const breakdown = document.getElementById('breakdown');
@@ -101,7 +101,7 @@ async function checkAccess() {
             document.getElementById('quiz').style.display = 'none';
             document.getElementById('result').style.display = 'block';
             document.getElementById('type').textContent = 'Already Submitted';
-            document.getElementById('description').textContent = 'You already completed this form. Contact me for a redo. \n If you forgot to take the code, go here: https://surveyswap.io/sr/DCK8-14SE-FBXW';
+            document.getElementById('description').textContent = 'You already completed this form. Contact me for a redo. \n If you forgot to take the code, go here: https://surveyswap.io/sr/DCK8-14SE-FBXW or https://www.surveycircle.com/PHTM-3KME-94QP-K6G6/';
         }
     } catch (e) {
         console.warn('checkAccess failed:', e);
